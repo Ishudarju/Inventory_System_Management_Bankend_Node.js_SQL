@@ -21,7 +21,12 @@ router.post('/request-password-reset', StaffController.requestPasswordReset);
 // Route to reset password
 router.post('/reset-password', StaffController.resetPassword);
 
+//getAll staffs
+
 // Route to get all users (for admin)
+router.get('/getstaff',authMiddleware,adminOnly, StaffController.getAllStaffUsers);
+
+// Route to get all users (staff and admin)
 router.get('/users',authMiddleware,adminOnly, StaffController.getAllUsers);
 
 // Route to delete a user by ID (for admin)

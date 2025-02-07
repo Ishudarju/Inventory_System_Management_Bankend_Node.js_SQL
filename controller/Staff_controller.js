@@ -7,14 +7,72 @@ const StaffController = {
  
  // Staff Registration
 
-register: (req, res) => {
+// register: (req, res) => {
 
-  //resiger
+  
+//   if (req.user.role !== 'admin') {
+//     return res.status(403).json({ message: 'Access denied: Admins only' });
+//   }
+
+//   const { username, email, password, confirm_password, role = 'staff', contact_number, address_details, user_id_proof } = req.body;
+
+//   // 🔹 Ensure role is 'staff' (Admin CANNOT create another admin)
+//   if (role.toLowerCase() === 'admin') {
+//     return res.status(400).json({ message: 'Admin cannot create another admin. Only staff can be created.' });
+//   }
+
+//   // 🔹 Validate required fields
+//   if (!username || !email || !password || !contact_number || !address_details || !user_id_proof) {
+//     return res.status(400).json({ message: 'Please provide all required fields.' });
+//   }
+
+//   // 🔹 Validate Aadhar number format (12 digits only)
+//   const aadharRegex = /^\d{12}$/;
+//   if (!aadharRegex.test(user_id_proof)) {
+//     return res.status(400).json({ message: 'Aadhar must be exactly 12 digits' });
+//   }
+
+//   // ✅ Check if email already exists
+//   User.findByEmail(email, (err, existingUser) => {
+//     if (err) return res.status(500).json({ message: 'Database error', error: err });
+
+//     if (existingUser.length > 0) {
+//       return res.status(400).json({ message: 'Email already exists. Please use a different email.' });
+//     }
+
+//     // ✅ Check if Aadhar number already exists
+//     User.findByAadhar(user_id_proof, (err, existingAadhar) => {
+//       if (err) return res.status(500).json({ message: 'Database error', error: err });
+
+//       if (existingAadhar.length > 0) {
+//         return res.status(400).json({ message: 'Aadhar number already exists. Each Aadhar can belong to only one user.' });
+//       }
+
+//       // ✅ Hash password and create the user
+//       bcrypt.hash(password, 10, (err, hashedPassword) => {
+//         if (err) {
+//           return res.status(500).json({ message: 'Error hashing password', error: err });
+//         }
+
+//         // ✅ Save staff user to database
+//         User.create(username, email,confirm_password,hashedPassword, role, contact_number, address_details, user_id_proof, (err, result) => {
+//           if (err) {
+//             return res.status(500).json({ message: 'Error registering staff', error: err });
+//           }
+//           res.status(201).json({ message: 'Staff registered successfully' });
+//         });
+//       });
+//     });
+//   });
+// },
+
+register: (req, res) => {
+  // 🔹 Ensure only admins can register users
   if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Access denied: Admins only' });
   }
 
-  const { username, email, password, role = 'staff', contact_number, address_details, user_id_proof } = req.body;
+  const { username, email, password, confirm_password, role = 'staff', contact_number, address_details, user_id_proof } = req.body;
 
   // 🔹 Ensure role is 'staff' (Admin CANNOT create another admin)
   if (role.toLowerCase() === 'admin') {
@@ -22,14 +80,19 @@ register: (req, res) => {
   }
 
   // 🔹 Validate required fields
-  if (!username || !email || !password || !contact_number || !address_details || !user_id_proof) {
+  if (!username || !email || !password || !confirm_password || !contact_number || !address_details || !user_id_proof) {
     return res.status(400).json({ message: 'Please provide all required fields.' });
+  }
+
+  // 🔹 Ensure password and confirm password match
+  if (password !== confirm_password) {
+    return res.status(400).json({ message: 'Password and Confirm Password do not match.' });
   }
 
   // 🔹 Validate Aadhar number format (12 digits only)
   const aadharRegex = /^\d{12}$/;
   if (!aadharRegex.test(user_id_proof)) {
-    return res.status(400).json({ message: 'Aadhar must be exactly 12 digits' });
+    return res.status(400).json({ message: 'Aadhar must be exactly 12 digits.' });
   }
 
   // ✅ Check if email already exists
@@ -48,7 +111,7 @@ register: (req, res) => {
         return res.status(400).json({ message: 'Aadhar number already exists. Each Aadhar can belong to only one user.' });
       }
 
-      // ✅ Hash password and create the user
+      // ✅ Hash password before saving
       bcrypt.hash(password, 10, (err, hashedPassword) => {
         if (err) {
           return res.status(500).json({ message: 'Error hashing password', error: err });
@@ -64,7 +127,8 @@ register: (req, res) => {
       });
     });
   });
-},
+}
+,
 
 
   login: async (req, res) => {
@@ -187,19 +251,38 @@ register: (req, res) => {
     });
   },
 
-  // Get all users (Admin can access this)
-  getAllUsers: (req, res) => {
-    // Use the pool for the query
-    pool.query("SELECT * FROM users", (err, results) => {
+
+  getAllStaffUsers: (req, res) => {
+    
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ status: false, message: 'Access denied: Admins only' });
+    }
+
+    User.getAllStaff((err, results) => {
       if (err) {
-        // If there's an error with the query, send a 500 error response
-        return res.status(500).json({
-          status: false,
-          message: "Database query error",
-          error: err,
-        });
+        return res.status(500).json({ status: false, message: "Database query error", error: err });
       }
-      // Return the users in the response
+
+      return res.status(200).json({
+        status: true,
+        message: "Staff users retrieved successfully",
+        users: results,
+      });
+    });
+  },
+
+  // Get all users (Admin can access this)
+ 
+  getAllUsers: (req, res) => {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ status: false, message: 'Access denied: Admins only' });
+    }
+
+    User.getAll((err, results) => {
+      if (err) {
+        return res.status(500).json({ status: false, message: "Database query error", error: err });
+      }
+
       return res.status(200).json({
         status: true,
         message: "Users retrieved successfully",
@@ -234,59 +317,125 @@ register: (req, res) => {
 
 
 
+  // updateUser: (req, res) => {
+  //   if (req.user.role !== 'admin') {
+  //     return res.status(403).json({ message: 'Access denied: Only admins can update user details' });
+  //   }
+
+  //   const { id } = req.params;
+  //   const { username, email, password, role, contact_number, address_details, user_id_proof } = req.body;
+
+  //   // ✅ Prevent manually changing a user's role to admin
+  //   if (role && role.toLowerCase() === 'admin') {
+  //     return res.status(400).json({ message: 'Cannot change role to admin manually' });
+  //   }
+
+  //   // ✅ Check if email already exists (excluding the current user)
+  //   User.findByEmail(email, (err, existingUser) => {
+  //     if (err) return res.status(500).json({ message: 'Database error', error: err });
+
+  //     if (existingUser.length > 0 && existingUser[0].id !== parseInt(id)) {
+  //       return res.status(400).json({ message: 'Email already exists. Please use a different email.' });
+  //     }
+
+  //     // ✅ Check if Aadhar already exists (excluding the current user)
+  //     User.findByAadhar(user_id_proof, (err, existingAadhar) => {
+  //       if (err) return res.status(500).json({ message: 'Database error', error: err });
+
+  //       if (existingAadhar.length > 0 && existingAadhar[0].id !== parseInt(id)) {
+  //         return res.status(400).json({ message: 'Aadhar number already exists. Each Aadhar can belong to only one user.' });
+  //       }
+
+  //       // ✅ If password is provided, hash it before updating
+  //       if (password) {
+  //         bcrypt.hash(password, 10, (err, hashedPassword) => {
+  //           if (err) return res.status(500).json({ message: 'Error hashing password', error: err });
+
+  //           // ✅ Call your update function from userModel
+  //           User.update(id, username, email, hashedPassword, role, contact_number, address_details, user_id_proof, (err, result) => {
+  //             if (err) return res.status(500).json({ message: 'Error updating user', error: err });
+
+  //             res.status(200).json({ message: 'User updated successfully' });
+  //           });
+  //         });
+  //       } else {
+  //         // ✅ Call update function without password hashing
+  //         User.update(id, username, email, null, role, contact_number, address_details, user_id_proof, (err, result) => {
+  //           if (err) return res.status(500).json({ message: 'Error updating user', error: err });
+
+  //           res.status(200).json({ message: 'User updated successfully' });
+  //         });
+  //       }
+  //     });
+  //   });
+  // }
+
   updateUser: (req, res) => {
     if (req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Access denied: Only admins can update user details' });
+        return res.status(403).json({ message: 'Access denied: Only admins can update user details' });
     }
 
     const { id } = req.params;
-    const { username, email, password, role, contact_number, address_details, user_id_proof } = req.body;
+    const { username, email, password, confirm_password, role, contact_number, address_details, user_id_proof } = req.body;
 
     // ✅ Prevent manually changing a user's role to admin
     if (role && role.toLowerCase() === 'admin') {
-      return res.status(400).json({ message: 'Cannot change role to admin manually' });
+        return res.status(400).json({ message: 'Cannot change role to admin manually' });
+    }
+
+    // ✅ Ensure confirm_password matches password
+    if (password && password !== confirm_password) {
+        return res.status(400).json({ message: 'Password and Confirm Password do not match' });
     }
 
     // ✅ Check if email already exists (excluding the current user)
     User.findByEmail(email, (err, existingUser) => {
-      if (err) return res.status(500).json({ message: 'Database error', error: err });
-
-      if (existingUser.length > 0 && existingUser[0].id !== parseInt(id)) {
-        return res.status(400).json({ message: 'Email already exists. Please use a different email.' });
-      }
-
-      // ✅ Check if Aadhar already exists (excluding the current user)
-      User.findByAadhar(user_id_proof, (err, existingAadhar) => {
         if (err) return res.status(500).json({ message: 'Database error', error: err });
 
-        if (existingAadhar.length > 0 && existingAadhar[0].id !== parseInt(id)) {
-          return res.status(400).json({ message: 'Aadhar number already exists. Each Aadhar can belong to only one user.' });
+        if (existingUser.length > 0 && existingUser[0].id !== parseInt(id)) {
+            return res.status(400).json({ message: 'Email already exists. Please use a different email.' });
         }
 
-        // ✅ If password is provided, hash it before updating
-        if (password) {
-          bcrypt.hash(password, 10, (err, hashedPassword) => {
-            if (err) return res.status(500).json({ message: 'Error hashing password', error: err });
+        // ✅ Check if Aadhar already exists (excluding the current user)
+        User.findByAadhar(user_id_proof, (err, existingAadhar) => {
+            if (err) return res.status(500).json({ message: 'Database error', error: err });
 
-            // ✅ Call your update function from userModel
-            User.update(id, username, email, hashedPassword, role, contact_number, address_details, user_id_proof, (err, result) => {
-              if (err) return res.status(500).json({ message: 'Error updating user', error: err });
+            if (existingAadhar.length > 0 && existingAadhar[0].id !== parseInt(id)) {
+                return res.status(400).json({ message: 'Aadhar number already exists. Each Aadhar can belong to only one user.' });
+            }
 
-              res.status(200).json({ message: 'User updated successfully' });
-            });
-          });
-        } else {
-          // ✅ Call update function without password hashing
-          User.update(id, username, email, null, role, contact_number, address_details, user_id_proof, (err, result) => {
-            if (err) return res.status(500).json({ message: 'Error updating user', error: err });
+            // ✅ If password is provided, hash it before updating
+            if (password) {
+                bcrypt.hash(password, 10, (err, hashedPassword) => {
+                    if (err) return res.status(500).json({ message: 'Error hashing password', error: err });
 
-            res.status(200).json({ message: 'User updated successfully' });
-          });
-        }
-      });
+                    // ✅ Call update function with new password
+                    User.update(id, username, email, hashedPassword, role, contact_number, address_details, user_id_proof, (err, result) => {
+                        if (err) return res.status(500).json({ message: 'Error updating user', error: err });
+
+                        res.status(200).json({ message: 'User updated successfully' });
+                    });
+                });
+            } else {
+                // ✅ Call update function without modifying the password
+                User.updateWithoutPassword(id, username, email, role, contact_number, address_details, user_id_proof, (err, result) => {
+                    if (err) return res.status(500).json({ message: 'Error updating user', error: err });
+
+                    res.status(200).json({ message: 'User updated successfully' });
+                });
+            }
+        });
     });
-  }
+},
 
+// // ✅ Update user details without modifying password
+// updateWithoutPassword: (id, username, email, role, contact_number, address_details, user_id_proof, callback) => {
+//     const query = `UPDATE users 
+//                    SET username = ?, email = ?, role = ?, 
+//                        contact_number = ?, address_details = ?, user_id_proof = ? 
+//                    WHERE id = ?`;
+//     db.query(query, [username, email, role, contact_number, address_details, user_id_proof, id], callback);
+// },
 
   
 };

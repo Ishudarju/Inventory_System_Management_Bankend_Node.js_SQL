@@ -1,11 +1,31 @@
 const db = require('../config/Database'); 
 
 const User = {
-  create: (username, email, hashedPassword, role, contact_number, address_details, user_id_proof, callback) => {
-    const query = `INSERT INTO users (username, email, encrypted_password, role, contact_number, address_details, user_id_proof)
-                   VALUES (?, ?, ?, ?, ?, ?, ?)`;
-    db.query(query, [username, email, hashedPassword, role, contact_number, address_details, user_id_proof], callback);
+ 
+
+    create: (username, email, hashedPassword, role, contact_number, address_details, user_id_proof, callback) => {
+      const query = `INSERT INTO users (username, email, encrypted_password, role, contact_number, address_details, user_id_proof)
+                     VALUES (?, ?, ?, ?, ?, ?, ?)`;
+      db.query(query, [username, email, hashedPassword, role, contact_number, address_details, user_id_proof], callback);
+    },
+
+
+    getAllStaff: (callback) => {
+      const query = `
+        SELECT id, username, email, role, contact_number, address_details, user_id_proof
+        FROM users
+        WHERE role = 'staff'
+      `;
+      db.query(query, callback);
+    },
+
+    // Fetch all users without showing password
+  getAll: (callback) => {
+    const query = `SELECT id, username, email, role, contact_number, address_details, user_id_proof FROM users`;
+    db.query(query, callback);
   },
+  
+  
 
   findByEmail: (email, callback) => {
     const query = 'SELECT * FROM users WHERE email = ?'; // Use parameterized query to avoid SQL injection
