@@ -245,10 +245,28 @@ static async filterCategoriesAndProducts({ cat_auto_gen_id, product_name, produc
 
 
 
-  static async getAll() {
-    const rows = await queryAsync('SELECT * FROM product_category', []);
-    return rows;
-  }
+  // static async getAll() {
+  //   const rows = await queryAsync('SELECT * FROM product_category', []);
+  //   return rows;
+  // }
+
+  static async getAll(page, limit) {
+    const offset = (page - 1) * limit; // Calculate offset
+
+    // Query to fetch paginated categories
+    const rows = await queryAsync(
+        'SELECT * FROM product_category LIMIT ? OFFSET ?', 
+        [limit, offset]
+    );
+
+    // Query to get total count of categories
+    const totalRows = await queryAsync('SELECT COUNT(*) AS total FROM product_category', []);
+    const totalCategories = totalRows[0].total;
+
+    return { categories: rows, totalCategories };
+}
+
+
 
   static async getById(id) {
     const rows = await queryAsync('SELECT * FROM product_category WHERE id = ?', [id]);

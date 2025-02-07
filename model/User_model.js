@@ -10,17 +10,34 @@ const User = {
     },
 
 
-    getAllStaff: (callback) => {
-      const query = `
-        SELECT id, username, email, role, contact_number, address_details, user_id_proof
-        FROM users
-        WHERE role = 'staff'
-      `;
-      db.query(query, callback);
-    },
+    // getAllStaff: (callback) => {
+    //   const query = `
+    //     SELECT id, username, email, role, contact_number, address_details, user_id_proof
+    //     FROM users
+    //     WHERE role = 'staff'
+    //   `;
+    //   db.query(query, callback);
+    // },
 
     // Fetch all users without showing password
-  getAll: (callback) => {
+  
+    getAllStaff: (page, limit, callback) => {
+      const offset = (page - 1) * limit; // Calculate offset
+  
+      const query = `
+          SELECT id, username, email, role, contact_number, address_details, user_id_proof
+          FROM users
+          WHERE role = 'staff'
+          LIMIT ? OFFSET ?`; // Apply LIMIT and OFFSET
+  
+      db.query(query, [limit, offset], callback);
+  },
+  
+  
+  
+  
+  
+    getAll: (callback) => {
     const query = `SELECT id, username, email, role, contact_number, address_details, user_id_proof FROM users`;
     db.query(query, callback);
   },

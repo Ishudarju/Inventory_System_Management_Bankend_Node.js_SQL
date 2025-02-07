@@ -132,16 +132,40 @@ class CategoryController {
 
 
 
+//ishu already correct code 
+
+  // static async getAllCategories(req, res) {
+  //   try {
+  //     const categories = await Category.getAll();
+  //     res.status(200).json(categories);
+  //   } catch (error) {
+  //     res.status(500).json({ message: 'Error fetching categories.', error: error.message });
+  //   }
+  // }
 
 
-  static async getAllCategories(req, res) {
+  static async getAllCategories(req, res) { 
     try {
-      const categories = await Category.getAll();
-      res.status(200).json(categories);
+        const page = parseInt(req.query.page) || 1;  // Default to page 1
+        const limit = parseInt(req.query.limit) || 10; // Default limit 10 per page
+
+        const { categories, totalCategories } = await Category.getAll(page, limit);
+
+        res.status(200).json({
+            success: true,
+            message: "Categories fetched successfully",
+            page: page,
+            limit: limit,
+            totalCategories: totalCategories,
+            totalPages: Math.ceil(totalCategories / limit),
+            data: categories
+        });
+
     } catch (error) {
-      res.status(500).json({ message: 'Error fetching categories.', error: error.message });
+        res.status(500).json({ message: 'Error fetching categories.', error: error.message });
     }
-  }
+}
+
 
   static async getCategoryById(req, res) {
     try {

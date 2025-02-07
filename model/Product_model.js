@@ -4,30 +4,80 @@ const db = require("../config/Database");
 class Product {
 
 
-    static fetchAll() {
+    // static fetchAll() {
+    //     return new Promise((resolve, reject) => {
+    //         const query = `
+    //         SELECT 
+    //             p.id,
+    //             p.product_name,
+    //             c.category_name AS product_category,
+    //             p.product_quantity,
+    //             p.product_price,
+    //             p.product_description,
+    //             p.generic_name,
+    //             p.hsn_code,
+    //             p.product_batch_no,
+    //             p.expiry_date,
+    //             p.product_discount,
+    //             p.supplier_price,
+    //             s.company_name AS supplier,
+    //             p.brand_name,
+    //             p.selling_price,
+    //             p.GST,
+    //             p.stock_status,
+    //             p.MFD,
+    //             p.created_at,
+    //             p.updated_at,
+    //             p.deleted_at,
+    //             p.is_deleted
+    //         FROM 
+    //             product_table p
+    //         JOIN 
+    //             product_category c ON p.product_category = c.id
+    //         JOIN 
+    //             supplier s ON p.supplier = s.supplier_id
+    //         WHERE 
+    //             p.is_deleted = 0;`; // Fetch only products not soft-deleted
+
+    //         db.query(query, (err, result) => {
+    //             if (err) {
+    //                 console.error('Database error:', err);
+    //                 return reject(new Error('Error fetching products from the database'));
+    //             }
+
+    //             if (!result || result.length === 0) {
+    //                 return resolve([]); // Return an empty array if no products found
+    //             }
+
+    //             // Update stock_status based on product_quantity
+    //             const updatedProducts = result.map(product => {
+    //                 let stockStatus = 'Available';
+    //                 if (product.product_quantity === 0) {
+    //                     stockStatus = 'Out of Stock';
+    //                 } else if (product.product_quantity < 20) {
+    //                     stockStatus = 'Low Stock';
+    //                 }
+    //                 return { ...product, stock_status: stockStatus };
+    //             });
+
+    //             resolve(updatedProducts); // Return updated product data
+    //         });
+    //     });
+    // }
+
+
+    static fetchAll(page = 1, limit = 10) {
         return new Promise((resolve, reject) => {
+            const offset = (page - 1) * limit; // Calculate offset for pagination
+    
+            // Query to fetch paginated products
             const query = `
             SELECT 
-                p.id,
-                p.product_name,
-                c.category_name AS product_category,
-                p.product_quantity,
-                p.product_price,
-                p.product_description,
-                p.generic_name,
-                p.product_batch_no,
-                p.expiry_date,
-                p.product_discount,
-                p.supplier_price,
-                s.company_name AS supplier,
-                p.brand_name,
-                p.selling_price,
-                p.GST,
-                p.stock_status,
-                p.created_at,
-                p.updated_at,
-                p.deleted_at,
-                p.is_deleted
+                p.id, p.product_name, c.category_name AS product_category, p.product_quantity, 
+                p.product_price, p.product_description, p.generic_name, p.hsn_code, 
+                p.product_batch_no, p.expiry_date, p.product_discount, p.supplier_price, 
+                s.company_name AS supplier, p.brand_name, p.selling_price, p.GST, 
+                p.stock_status, p.MFD, p.created_at, p.updated_at, p.deleted_at, p.is_deleted
             FROM 
                 product_table p
             JOIN 
@@ -35,34 +85,48 @@ class Product {
             JOIN 
                 supplier s ON p.supplier = s.supplier_id
             WHERE 
-                p.is_deleted = 0;`; // Fetch only products not soft-deleted
-
-            db.query(query, (err, result) => {
-                if (err) {
-                    console.error('Database error:', err);
-                    return reject(new Error('Error fetching products from the database'));
+                p.is_deleted = 0
+            LIMIT ? OFFSET ?`; // Limit and Offset for Pagination
+    
+            // Query to get total product count
+            const countQuery = `SELECT COUNT(*) AS total_products FROM product_table WHERE is_deleted = 0`;
+    
+            db.query(countQuery, [], (countErr, countResult) => {
+                if (countErr) {
+                    console.error('Database error (count):', countErr);
+                    return reject(new Error('Error fetching total product count'));
                 }
-
-                if (!result || result.length === 0) {
-                    return resolve([]); // Return an empty array if no products found
-                }
-
-                // Update stock_status based on product_quantity
-                const updatedProducts = result.map(product => {
-                    let stockStatus = 'Available';
-                    if (product.product_quantity === 0) {
-                        stockStatus = 'Out of Stock';
-                    } else if (product.product_quantity < 20) {
-                        stockStatus = 'Low Stock';
+    
+                const totalProducts = countResult[0].total_products; // Extract total count
+    
+                db.query(query, [limit, offset], (err, result) => {
+                    if (err) {
+                        console.error('Database error (products):', err);
+                        return reject(new Error('Error fetching products from the database'));
                     }
-                    return { ...product, stock_status: stockStatus };
+    
+                    if (!result || result.length === 0) {
+                        return resolve({ products: [], totalProducts });
+                    }
+    
+                    // Update stock_status based on product_quantity
+                    const updatedProducts = result.map(product => {
+                        let stockStatus = 'Available';
+                        if (product.product_quantity === 0) {
+                            stockStatus = 'Out of Stock';
+                        } else if (product.product_quantity < 20) {
+                            stockStatus = 'Low Stock';
+                        }
+                        return { ...product, stock_status: stockStatus };
+                    });
+    
+                    resolve({ products: updatedProducts, totalProducts }); // Return updated product data and count
                 });
-
-                resolve(updatedProducts); // Return updated product data
             });
         });
     }
-
+    
+    
 
 
 
@@ -80,6 +144,7 @@ class Product {
                     p.product_price,
                     p.product_description,
                     p.generic_name,
+                    p.hsn_code,
                     p.product_batch_no,
                     p.expiry_date,
                     p.product_discount,
@@ -89,6 +154,7 @@ class Product {
                     p.selling_price,
                     p.GST,
                     p.stock_status,
+                    p.MFD,
                     p.created_at,
                     p.updated_at,
                     p.deleted_at,
@@ -219,7 +285,7 @@ static determineStockStatus(quantity) {
         try {
             const query = `
             INSERT INTO product_table (
-                product_name, product_category, product_quantity, product_price, product_description,
+                product_name, product_category, product_quantity, product_price, hsn_code,product_description,
                 generic_name, product_batch_no, expiry_date, product_discount, supplier_price, supplier,
                 brand_name, selling_price, GST, stock_status
             ) VALUES ?

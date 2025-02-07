@@ -140,23 +140,53 @@ exports.createInvoice = async (req, res) => {
 
 // get all invoices
 
+//my correct code
 
+// exports.getAllInvoices = async (req, res) => {
+//     try {
+//         // Call the model method to fetch invoices
+//         const invoices = await Invoice.getAllInvoices();
+
+//         // Send a successful response with the fetched data
+//         res.status(200).json({
+//             success: true,
+//             message: 'Invoices fetched successfully',
+//             data: invoices,
+//         });
+//     } catch (error) {
+//         console.error('Error fetching invoices:', error);
+
+//         // Send an error response if something goes wrong
+//         res.status(500).json({
+//             success: false,
+//             message: 'Failed to fetch invoices',
+//             error: error.message,
+//         });
+//     }
+// };
 
 exports.getAllInvoices = async (req, res) => {
     try {
-        // Call the model method to fetch invoices
-        const invoices = await Invoice.getAllInvoices();
+        const page = parseInt(req.query.page) || 1; // Default page 1
+        const limit = parseInt(req.query.limit) || 10; // Default limit 10 invoices per page
 
-        // Send a successful response with the fetched data
+        const { invoices, totalInvoices, totalPages } = await Invoice.getAllInvoices(page, limit);
+
+        if (invoices.length === 0) {
+            return res.status(404).json({ success: false, message: 'No invoices found' });
+        }
+
         res.status(200).json({
             success: true,
             message: 'Invoices fetched successfully',
+            total_invoice: totalInvoices,
+            total_page: totalPages,
+            page: page,
+            limit: limit,
             data: invoices,
         });
     } catch (error) {
         console.error('Error fetching invoices:', error);
-
-        // Send an error response if something goes wrong
         res.status(500).json({
             success: false,
             message: 'Failed to fetch invoices',
@@ -164,6 +194,8 @@ exports.getAllInvoices = async (req, res) => {
         });
     }
 };
+
+
 
 //update the invoice
 exports.updateInvoice = async (req, res) => {

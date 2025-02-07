@@ -13,6 +13,7 @@ router.post('/inproduct', authMiddleware, adminOnly, productController.createPro
 
 router.get('/Allpro', authMiddleware, adminOrStaff, productController.getAllProducts);  // Get all products
 
+
 router.get('/proByid/:id', authMiddleware, adminOrStaff, productController.getProductById);  // Get product by ID
 
 router.put('/productput/:id', authMiddleware, adminOnly, productController.updateProduct);  // Update product

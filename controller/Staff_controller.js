@@ -252,25 +252,51 @@ register: (req, res) => {
   },
 
 
+  // getAllStaffUsers: (req, res) => {
+
+  //   if (req.user.role !== 'admin') {
+  //     return res.status(403).json({ status: false, message: 'Access denied: Admins only' });
+  //   }
+
+  //   User.getAllStaff((err, results) => {
+  //     if (err) {
+  //       return res.status(500).json({ status: false, message: "Database query error", error: err });
+  //     }
+
+  //     return res.status(200).json({
+  //       status: true,
+  //       message: "Staff users retrieved successfully",
+  //       users: results,
+  //     });
+  //   });
+  // },
+
   getAllStaffUsers: (req, res) => {
-    
     if (req.user.role !== 'admin') {
-      return res.status(403).json({ status: false, message: 'Access denied: Admins only' });
+        return res.status(403).json({ status: false, message: 'Access denied: Admins only' });
     }
 
-    User.getAllStaff((err, results) => {
-      if (err) {
-        return res.status(500).json({ status: false, message: "Database query error", error: err });
-      }
+    const page = parseInt(req.query.page) || 1; // Default to page 1
+    const limit = parseInt(req.query.limit) || 10; // Default limit 10 per page
 
-      return res.status(200).json({
-        status: true,
-        message: "Staff users retrieved successfully",
-        users: results,
-      });
+    User.getAllStaff(page, limit, (err, results) => {
+        if (err) {
+            return res.status(500).json({ status: false, message: "Database query error", error: err });
+        }
+
+        return res.status(200).json({
+            status: true,
+            message: "Staff users retrieved successfully",
+            page: page,
+            limit: limit,
+            users: results,
+        });
     });
-  },
-
+}
+,
+ 
+ 
+ 
   // Get all users (Admin can access this)
  
   getAllUsers: (req, res) => {

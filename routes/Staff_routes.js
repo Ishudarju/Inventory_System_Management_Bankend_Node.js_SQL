@@ -2,7 +2,7 @@
 const express = require('express');
 const StaffController = require('../controller/Staff_controller');
 
-const {authMiddleware,adminOnly,adminOrStaff,limiter} = require('../middleware/auth_middleware');
+const {authMiddleware,adminOnly, adminOrStaff, limiter} = require('../middleware/auth_middleware');
 
 const router = express.Router();
 

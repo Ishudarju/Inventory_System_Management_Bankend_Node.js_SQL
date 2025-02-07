@@ -6,32 +6,69 @@ const db = require("../config/Database");
 class ProductController {
 
 
-static getAllProducts(req, res) {
-    Product.fetchAll()
-        .then(products => {
-            // Handle the case where no products are found
-            if (products.length === 0) {
-                return res.status(404).json({ message: 'No products found' });
-            }
+// static getAllProducts(req, res) {
+//     Product.fetchAll()
+//         .then(products => {
+//             // Handle the case where no products are found
+//             if (products.length === 0) {
+//                 return res.status(404).json({ message: 'No products found' });
+//             }
 
-            // Respond with fetched products
-            res.status(200).json({
-                message: 'Products fetched successfully',
-                data: products
-            });
-        })
-        .catch(err => {
-            console.error('Error fetching products:', err);
-            res.status(500).json({
-                message: 'Error fetching products',
-                error: err.message
-            });
-        });
-}
+//             // Respond with fetched products
+//             res.status(200).json({
+//                 message: 'Products fetched successfully',
+//                 data: products
+//             });
+//         })
+//         .catch(err => {
+//             console.error('Error fetching products:', err);
+//             res.status(500).json({
+//                 message: 'Error fetching products',
+//                 error: err.message
+//             });
+//         });
+// }
 
 
 
     // Get product by ID
+   
+    static getAllProducts(req, res) {
+        const page = parseInt(req.query.page) || 1; // Default to page 1
+        const limit = parseInt(req.query.limit) || 10; // Default limit to 10
+    
+        Product.fetchAll(page, limit)
+            .then(({ products, totalProducts }) => {
+                if (products.length === 0) {
+                    return res.status(404).json({ message: 'No products found' });
+                }
+    
+                // Calculate total pages
+                const totalPages = Math.ceil(totalProducts / limit);
+    
+                // Respond with paginated products, total count, and total pages
+                res.status(200).json({
+                    message: 'Products fetched successfully',
+                    page: page,
+                    limit: limit,
+                    totalProducts: totalProducts,
+                    totalPages: totalPages,
+                    data: products
+                });
+            })
+            .catch(err => {
+                console.error('Error fetching products:', err);
+                res.status(500).json({
+                    message: 'Error fetching products',
+                    error: err.message
+                });
+            });
+    }
+    
+     
+   
+   
+   
     static async getProductById(req, res) {
         try {
             // Fetch the product by ID

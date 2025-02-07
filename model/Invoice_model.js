@@ -129,67 +129,142 @@ class Invoice {
 
 
     //get All invoice
+//my correct code
+    // static getAllInvoices() {
+    //     return new Promise((resolve, reject) => {
+    //         const query = `
+    //                 SELECT i.*, c.customer_name
+    //                 FROM invoice_table i
+    //                 JOIN customer_table c ON i.customer_id = c.customer_id
+    //             `;
 
-    static getAllInvoices() {
+    //         db.query(query, async (err, results) => {
+    //             if (err) return reject(err);
+
+    //             const invoices = await Promise.all(results.map(async (invoice) => {
+    //                 // Parse product IDs and quantities
+    //                 const productIDs = JSON.parse(invoice.product_id || '[]');
+    //                 const quantities = JSON.parse(invoice.quantity || '[]');
+
+    //                 if (!productIDs.length || !quantities.length) {
+    //                     return { ...invoice, products: [], totalGST: "0.00", finalPriceWithGST: invoice.final_price };
+    //                 }
+
+    //                 const productQuery = `
+    //                         SELECT id AS product_id, product_name, selling_price, GST 
+    //                         FROM product_table 
+    //                         WHERE id IN (?)
+    //                     `;
+
+    //                 try {
+    //                     const products = await new Promise((resolve, reject) => {
+    //                         db.query(productQuery, [productIDs], (err, productResults) => {
+    //                             if (err) return reject(err);
+    //                             resolve(productResults);
+    //                         });
+    //                     });
+
+    //                     // Combine product details with quantities
+    //                     const productsWithDetails = products.map((product, index) => {
+    //                         const quantity = quantities[index] || 0;
+    //                         const gstAmount = parseFloat(((product.selling_price * product.GST) / 100).toFixed(2));
+    //                         return {
+    //                             ...product,
+    //                             quantity,
+    //                             gst_amount: gstAmount,
+    //                             selling_price: parseFloat(product.selling_price).toFixed(2),
+    //                         };
+    //                     });
+
+    //                     const totalGST = productsWithDetails.reduce((sum, p) => sum + p.gst_amount, 0).toFixed(2);
+    //                     const finalPriceWithGST = (parseFloat(invoice.final_price) + parseFloat(totalGST)).toFixed(2);
+
+    //                     return { ...invoice, products: productsWithDetails, totalGST, finalPriceWithGST };
+
+    //                 } catch (err) {
+    //                     return reject(err);
+    //                 }
+    //             }));
+
+    //             resolve(invoices);
+    //         });
+    //     });
+    // }
+
+
+    static getAllInvoices(page = 1, limit = 10) {
         return new Promise((resolve, reject) => {
-            const query = `
+            const offset = (page - 1) * limit; // Calculate pagination offset
+    
+            // Query to count total invoices
+            const countQuery = `SELECT COUNT(*) AS total FROM invoice_table`;
+    
+            db.query(countQuery, (err, countResult) => {
+                if (err) return reject(err);
+    
+                const totalInvoices = countResult[0].total;
+                const totalPages = Math.ceil(totalInvoices / limit);
+    
+                // Query to fetch paginated invoices
+                const query = `
                     SELECT i.*, c.customer_name
                     FROM invoice_table i
                     JOIN customer_table c ON i.customer_id = c.customer_id
-                `;
-
-            db.query(query, async (err, results) => {
-                if (err) return reject(err);
-
-                const invoices = await Promise.all(results.map(async (invoice) => {
-                    // Parse product IDs and quantities
-                    const productIDs = JSON.parse(invoice.product_id || '[]');
-                    const quantities = JSON.parse(invoice.quantity || '[]');
-
-                    if (!productIDs.length || !quantities.length) {
-                        return { ...invoice, products: [], totalGST: "0.00", finalPriceWithGST: invoice.final_price };
-                    }
-
-                    const productQuery = `
+                    LIMIT ? OFFSET ?`; // Apply LIMIT and OFFSET
+    
+                db.query(query, [limit, offset], async (err, results) => {
+                    if (err) return reject(err);
+    
+                    const invoices = await Promise.all(results.map(async (invoice) => {
+                        const productIDs = JSON.parse(invoice.product_id || '[]');
+                        const quantities = JSON.parse(invoice.quantity || '[]');
+    
+                        if (!productIDs.length || !quantities.length) {
+                            return { ...invoice, products: [], totalGST: "0.00", finalPriceWithGST: invoice.final_price };
+                        }
+    
+                        const productQuery = `
                             SELECT id AS product_id, product_name, selling_price, GST 
                             FROM product_table 
                             WHERE id IN (?)
                         `;
-
-                    try {
-                        const products = await new Promise((resolve, reject) => {
-                            db.query(productQuery, [productIDs], (err, productResults) => {
-                                if (err) return reject(err);
-                                resolve(productResults);
+    
+                        try {
+                            const products = await new Promise((resolve, reject) => {
+                                db.query(productQuery, [productIDs], (err, productResults) => {
+                                    if (err) return reject(err);
+                                    resolve(productResults);
+                                });
                             });
-                        });
-
-                        // Combine product details with quantities
-                        const productsWithDetails = products.map((product, index) => {
-                            const quantity = quantities[index] || 0;
-                            const gstAmount = parseFloat(((product.selling_price * product.GST) / 100).toFixed(2));
-                            return {
-                                ...product,
-                                quantity,
-                                gst_amount: gstAmount,
-                                selling_price: parseFloat(product.selling_price).toFixed(2),
-                            };
-                        });
-
-                        const totalGST = productsWithDetails.reduce((sum, p) => sum + p.gst_amount, 0).toFixed(2);
-                        const finalPriceWithGST = (parseFloat(invoice.final_price) + parseFloat(totalGST)).toFixed(2);
-
-                        return { ...invoice, products: productsWithDetails, totalGST, finalPriceWithGST };
-
-                    } catch (err) {
-                        return reject(err);
-                    }
-                }));
-
-                resolve(invoices);
+    
+                            const productsWithDetails = products.map((product, index) => {
+                                const quantity = quantities[index] || 0;
+                                const gstAmount = parseFloat(((product.selling_price * product.GST) / 100).toFixed(2));
+                                return {
+                                    ...product,
+                                    quantity,
+                                    gst_amount: gstAmount,
+                                    selling_price: parseFloat(product.selling_price).toFixed(2),
+                                };
+                            });
+    
+                            const totalGST = productsWithDetails.reduce((sum, p) => sum + p.gst_amount, 0).toFixed(2);
+                            const finalPriceWithGST = (parseFloat(invoice.final_price) + parseFloat(totalGST)).toFixed(2);
+    
+                            return { ...invoice, products: productsWithDetails, totalGST, finalPriceWithGST };
+    
+                        } catch (err) {
+                            return reject(err);
+                        }
+                    }));
+    
+                    resolve({ invoices, totalInvoices, totalPages });
+                });
             });
         });
     }
+    
+    
 
 
     static async updateInvoice(invoiceId, data) {
