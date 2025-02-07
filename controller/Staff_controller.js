@@ -8,6 +8,8 @@ const StaffController = {
  // Staff Registration
 
 register: (req, res) => {
+
+  //resiger
   if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Access denied: Admins only' });
   }
