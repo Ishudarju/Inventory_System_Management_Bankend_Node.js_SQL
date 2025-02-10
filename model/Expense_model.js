@@ -6,10 +6,20 @@ class Expense {
         return db.execute(query, [data.category, data.amount, data.description]);
     }
 
+   
     static getAll() {
-        const query = "SELECT * FROM expense_table";
-        return db.execute(query);
+        return new Promise((resolve, reject) => {
+            db.query("SELECT * FROM expense_table", (err, results) => {
+                if (err) {
+                    console.error("Database Query Error:", err);
+                    return reject(err);
+                }
+                resolve(results);
+            });
+        });
     }
+    
+    
 
     static getById(id) {
         const query = "SELECT * FROM expense_table WHERE id = ?";

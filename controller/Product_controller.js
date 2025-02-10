@@ -97,7 +97,7 @@ static async createProduct(req, res) {
 
     console.log("product data", req.body);
 
-    if (!productData.product_name || !productData.product_price || !productData.product_quantity || !productData.hsn_code) {
+    if (!productData.product_name || !productData.product_price || !productData.product_quantity ) {
         return res.status(400).json({ message: 'Missing required fields.' });
     }
 

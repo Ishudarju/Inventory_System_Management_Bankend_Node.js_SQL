@@ -74,7 +74,7 @@ class Product {
             const query = `
             SELECT 
                 p.id, p.product_name, c.category_name AS product_category, p.product_quantity, 
-                p.product_price, p.product_description, p.generic_name, p.hsn_code, 
+                p.product_price, p.product_description, p.generic_name, 
                 p.product_batch_no, p.expiry_date, p.product_discount, p.supplier_price, 
                 s.company_name AS supplier, p.brand_name, p.selling_price, p.GST, 
                 p.stock_status, p.MFD, p.created_at, p.updated_at, p.deleted_at, p.is_deleted
@@ -250,8 +250,8 @@ static determineStockStatus(quantity) {
                             INSERT INTO product_table 
                             (product_name, product_category, product_quantity, product_price, product_description,
                             generic_name, product_batch_no, MFD,expiry_date, product_discount, supplier_price, supplier,
-                            brand_name, selling_price, GST, stock_status, hsn_code, created_at, updated_at, deleted_at, is_deleted)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), NULL, 0)
+                            brand_name, selling_price, GST, stock_status, created_at, updated_at, deleted_at, is_deleted)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), NULL, 0)
                         `;
             db.query(query, [
                 productData.product_name,
@@ -270,7 +270,7 @@ static determineStockStatus(quantity) {
                 productData.selling_price,
                 productData.GST,
                 productData.stock_status,
-                productData.hsn_code 
+                // productData.hsn_code 
             ], (err, result) => {
                 if (err) return reject(err);
                 resolve(result);

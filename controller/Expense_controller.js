@@ -22,16 +22,24 @@ exports.createExpense = async (req, res) => {
     }
 };
 
-// Get All Expenses
+//expense details
 exports.getAllExpenses = async (req, res) => {
     try {
-        const [expenses] = await Expensedetails.getAll();
+        const expenses = await Expensedetails.getAll();
+
+        if (!Array.isArray(expenses) || expenses.length === 0) {
+            return res.status(404).json({ success: false, message: "No expenses found" });
+        }
+
         res.status(200).json({ success: true, data: expenses });
+
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ success: false, message: 'Server error', error: err.message });
+        console.error("Database Error:", err);
+        res.status(500).json({ success: false, message: "Server error", error: err.message });
     }
 };
+
+
 
 // Get Expense By ID
 exports.getExpenseById = async (req, res) => {
