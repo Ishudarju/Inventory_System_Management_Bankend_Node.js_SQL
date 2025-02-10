@@ -30,19 +30,7 @@ const getDailySales = (startDate, endDate) => {
   };
   
   
-  // const getDailySales = (startDate, endDate) => {
-  //   // Adjust the end date to include the last second of the day
-  //   const endOfDay = `${endDate} 23:59:59`; // Adjusting endDate to the last second of the day
-  //   const query = `
-  //     SELECT DATE(invoice_created_at) AS sales_date, SUM(final_price) AS total_sales
-  //     FROM invoice_table
-  //     WHERE invoice_created_at BETWEEN ? AND ?
-  //     GROUP BY DATE(invoice_created_at)
-  //     ORDER BY sales_date;
-  //   `;
-  //   return executeQuery(query, [startDate, endOfDay]); // Use the adjusted endOfDay
-  // };
-  
+ 
 
 
 
