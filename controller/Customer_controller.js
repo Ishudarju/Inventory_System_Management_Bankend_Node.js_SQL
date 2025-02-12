@@ -99,6 +99,7 @@ exports.getAllCustomers = async (req, res) => {
             page: page,
             limit: limit,
             data: customers
+            ////ghjkfghjkjgfghjk
         });
     } catch (err) {
         console.error(err);
