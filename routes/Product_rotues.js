@@ -17,7 +17,7 @@ router.post('/inproduct', authMiddleware, adminOnly, productController.createPro
 router.get('/Allpro_pagination', authMiddleware, adminOrStaff, productController.getAllProducts);  // Get all products
 
 
-//product list only
+//product list only//
 
 router.get('/Allpro_list', authMiddleware, adminOrStaff, productController.getAllPro);  // Get all products
 
