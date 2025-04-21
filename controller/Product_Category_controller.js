@@ -74,10 +74,15 @@ class CategoryController {
     try {
       const { category_name, description } = req.body;
 
-      if (!category_name) {
-        return res.status(400).json({ message: 'Category name is required.' });
-      }
-      
+  // Validate category_name
+  if (!category_name || category_name.trim() === '') {
+    return res.status(400).json({ message: 'Category name is required.' });
+  }
+
+  // Validate description
+  if (!description || description.trim() === '') {
+    return res.status(400).json({ message: 'Description is required.' });
+  }      
 
       const categoryId = await Category.create({ category_name, description });
       res.status(201).json({

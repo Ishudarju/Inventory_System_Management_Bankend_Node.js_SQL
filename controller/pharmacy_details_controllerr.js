@@ -1,105 +1,67 @@
-// const Shop = require('../model/pharmachy_details_model');
-
-// // Create a shop
-// const createShop = async (req, res) => {
-//     try {
-//         const shopData = req.body;
-
-//         const shopId = await Shop.createShop(shopData);
-//         res.status(201).json({ message: 'Shop created successfully', shop_id: shopId });
-//     } catch (error) {
-//         console.error('Error creating shop:', error);
-//         res.status(500).json({ message: 'Internal server error' });
-//     }
-// };
-
-// // Get a shop by ID
-// const getShopById = async (req, res) => {
-//     try {
-//         const { shopId } = req.params;
-//         const shop = await Shop.getShopById(shopId);
-
-//         if (!shop) {
-//             return res.status(404).json({ message: 'Shop not found' });
-//         }
-
-//         res.status(200).json({ shop });
-//     } catch (error) {
-//         console.error('Error getting shop:', error);
-//         res.status(500).json({ message: 'Internal server error' });
-//     }
-// };
-
-// // Get all shops
-// const getAllShops = async (req, res) => {
-//     try {
-//         const shops = await Shop.getAllShops();
-//         res.status(200).json({ shops });
-//     } catch (error) {
-//         console.error('Error fetching all shops:', error);
-//         res.status(500).json({ message: 'Internal server error' });
-//     }
-// };
-
-// // Update a shop
-// const updateShop = async (req, res) => {
-//     try {
-//         const { shopId } = req.params;
-//         const shopData = req.body;
-
-//         const updated = await Shop.updateShop(shopId, shopData);
-
-//         if (!updated) {
-//             return res.status(404).json({ message: 'Shop not found' });
-//         }
-
-//         res.status(200).json({ message: 'Shop updated successfully' });
-//     } catch (error) {
-//         console.error('Error updating shop:', error);
-//         res.status(500).json({ message: 'Internal server error' });
-//     }
-// };
-
-// // Delete a shop
-// const deleteShop = async (req, res) => {
-//     try {
-//         const { shopId } = req.params;
-
-//         const deleted = await Shop.deleteShop(shopId);
-
-//         if (!deleted) {
-//             return res.status(404).json({ message: 'Shop not found' });
-//         }
-
-//         res.status(200).json({ message: 'Shop deleted successfully' });
-//     } catch (error) {
-//         console.error('Error deleting shop:', error);
-//         res.status(500).json({ message: 'Internal server error' });
-//     }
-// };
-
-// module.exports = {
-//     createShop,
-//     getShopById,
-//     getAllShops,
-//     updateShop,
-//     deleteShop
-// };
-
-
 
 const Shop = require('../model/pharmachy_details_model');
+const db=require('../config/Database');
 
-// Create a shop
-const createShop = (req, res) => {
-    const shopData = req.body;
+// Create a shop multi shops
+// const createShop = (req, res) => {
+//     const shopData = req.body;
 
-    Shop.createShop(shopData)
-    .then(shopId => res.status(201).json({ message: 'Shop created successfully', shop_id: shopId }))
-    .catch(error => {
-        console.error('Error creating shop:', error);
-        res.status(500).json({ message: 'Internal server error' });
-    });
+//     Shop.createShop(shopData)
+//     .then(shopId => res.status(201).json({ message: 'Shop created successfully', shop_id: shopId }))
+//     .catch(error => {
+//         console.error('Error creating shop:', error);
+//         res.status(500).json({ message: 'Internal server error' });
+//     });
+// };
+
+
+//only one shops
+const createShop = async (req, res) => {
+    const {
+        pharmacy_name,
+        pharmacy_address,
+        pincode,
+        owner_GST_number,
+        allow_registration,
+        description
+    } = req.body;
+
+    // Validate inputs
+    if (!pharmacy_name || !pharmacy_address || !pincode || !owner_GST_number || !allow_registration || !description) {
+        return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    if (owner_GST_number.length !== 15) {
+        return res.status(400).json({ message: 'GST number must be exactly 15 characters' });
+    }
+
+    try {
+        const [rows] = await db.promise().query("SELECT * FROM shop_table");
+        if (rows.length > 0) {
+            return res.status(409).json({ message: "A shop already exists. Please delete it before creating a new one." });
+        }
+
+        const query = `
+            INSERT INTO shop_table (
+                pharmacy_name, pharmacy_address, pincode, 
+                owner_GST_number, allow_registration, description
+            ) VALUES (?, ?, ?, ?, ?, ?)`;
+
+        const [result] = await db.promise().query(query, [
+            pharmacy_name,
+            pharmacy_address,
+            pincode,
+            owner_GST_number,
+            allow_registration,
+            description
+        ]);
+
+        res.status(201).json({ message: "Shop created successfully", shop_id: result.insertId });
+
+    } catch (error) {
+        console.error("Error creating shop:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
 };
 
 // Get a shop by ID
