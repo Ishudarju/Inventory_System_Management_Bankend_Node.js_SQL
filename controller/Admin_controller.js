@@ -104,7 +104,7 @@ const AdminController = {
       const resetToken = crypto.randomBytes(32).toString('hex');
       const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour from now
 
-      User.updateResetToken(user.id, resetToken, resetTokenExpiry, (err, result) => {
+      User.updateResetToken(user.email, resetToken, resetTokenExpiry, (err, result) => {
         if (err) {
           return res.status(500).json({ message: 'Error updating reset token', error: err });
         }
@@ -120,44 +120,84 @@ const AdminController = {
 
   // Reset Password (Verify Token and Update Password)
 
+  // resetPassword: (req, res) => {
+  //   const { token, newPassword } = req.body;
+
+  //   User.findByResetToken(token, (err, users) => {
+  //     if (err || users.length === 0) {
+  //       return res.status(400).json({ message: 'Invalid or expired token' });
+  //     }
+
+  //     const user = users[0];
+
+  //     if (user.reset_token_expiry < new Date()) {
+  //       return res.status(400).json({ message: 'Reset token has expired' });
+  //     }
+
+  //     // Hash the new password
+  //     bcrypt.hash(newPassword, 10, (err, hashedPassword) => {
+  //       if (err) {
+  //         return res.status(500).json({ message: 'Error hashing password', error: err });
+  //       }
+
+  //       // Update the password in the database
+  //       User.updatePassword(user.id, hashedPassword, (err, result) => {
+  //         if (err) {
+  //           return res.status(500).json({ message: 'Error updating password', error: err });
+  //         }
+
+  //         // Clear the reset token fields after successful reset
+  //         User.clearResetToken(user.id, (err) => {
+  //           if (err) {
+  //             return res.status(500).json({ message: 'Error clearing reset token', error: err });
+  //           }
+
+  //           res.status(200).json({ message: 'Password reset successfully' });
+  //         });
+  //       });
+  //     });
+  //   });
+  // },
+
   resetPassword: (req, res) => {
     const { token, newPassword } = req.body;
-
+  
     User.findByResetToken(token, (err, users) => {
       if (err || users.length === 0) {
         return res.status(400).json({ message: 'Invalid or expired token' });
       }
-
+  
       const user = users[0];
-
+  
       if (user.reset_token_expiry < new Date()) {
         return res.status(400).json({ message: 'Reset token has expired' });
       }
-
+  
       // Hash the new password
       bcrypt.hash(newPassword, 10, (err, hashedPassword) => {
         if (err) {
           return res.status(500).json({ message: 'Error hashing password', error: err });
         }
-
+  
         // Update the password in the database
-        User.updatePassword(user.id, hashedPassword, (err, result) => {
+        User.updatePassword(user.email, hashedPassword, (err, result) => {
           if (err) {
             return res.status(500).json({ message: 'Error updating password', error: err });
           }
-
+  
           // Clear the reset token fields after successful reset
-          User.clearResetToken(user.id, (err) => {
+          User.clearResetToken(user.email, (err) => {
             if (err) {
               return res.status(500).json({ message: 'Error clearing reset token', error: err });
             }
-
+  
             res.status(200).json({ message: 'Password reset successfully' });
           });
         });
       });
     });
   },
+  
 
   // Get all users
 

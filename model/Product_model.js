@@ -203,91 +203,73 @@ class Product {
     }
 
 
-// static fetchBySupplier_pro_cat(supplierId) {
-//     return new Promise((resolve, reject) => {
-//         const query = `
-//         SELECT 
-//             p.id,
-//             p.product_name,
-//             c.category_name AS product_category,
-//             p.product_quantity,
-//             p.product_price,
-//             p.product_description,
-//             p.generic_name,                
-//             p.product_batch_no,
-//             p.expiry_date,
-//             p.product_discount,
-//             p.supplier_price,
-//             s.company_name AS supplier,
-//             p.brand_name,
-//             p.selling_price,
-//             p.GST,
-//             p.stock_status,
-//             p.MFD,
-//             p.created_at,
-//             p.updated_at,
-//             p.deleted_at,
-//             p.is_deleted
-//         FROM 
-//             product_table p
-//         JOIN 
-//             product_category c ON p.product_category = c.id
-//         JOIN 
-//             supplier s ON p.supplier = s.supplier_id
-//         WHERE 
-//             p.is_deleted = 0 AND p.supplier = ?
-//         ORDER BY 
-//             p.expiry_date ASC;`; // Order by expiry_date ascending (soonest expiry first)
 
-//         db.query(query, [supplierId], (err, result) => {
-//             if (err) {
-//                 console.error('Database error:', err);
-//                 return reject(new Error('Error fetching products from the database'));
-//             }
 
-//             if (!result || result.length === 0) {
-//                 return resolve([]); // Return an empty array if no products found
-//             }
-
-//             // Update stock_status based on product_quantity
-//             const updatedProducts = result.map(product => {
-//                 let stockStatus = 'Available';
-//                 if (product.product_quantity === 0) {
-//                     stockStatus = 'Out of Stock';
-//                 } else if (product.product_quantity < 20) {
-//                     stockStatus = 'Low Stock';
-//                 }
-//                 return { ...product, stock_status: stockStatus };
-//             });
-
-//             resolve(updatedProducts); // Return updated product data
-//         });
-//     });
-// }
-
-static fetchCategoriesBySupplier(supplierId) {
+static fetchCategoriesWithProductsBySupplier(supplierId) {
     return new Promise((resolve, reject) => {
         const query = `
-        SELECT DISTINCT 
-            c.category_name
-        FROM 
-            product_table p
-        JOIN 
-            product_category c ON p.product_category = c.id
-        WHERE 
-            p.is_deleted = 0 AND p.supplier = ?;`; // Fetch only distinct category names
+            SELECT 
+                c.id AS category_id,
+                c.category_name,
+                p.id AS product_id,
+                p.product_name,
+                p.product_quantity,
+                p.product_price,
+                p.product_description,
+                p.generic_name,                
+                p.product_batch_no,
+                p.expiry_date,
+                p.product_discount,
+                p.supplier_price,
+                p.brand_name,
+                p.selling_price,
+                p.GST,
+                p.stock_status,                
+                p.created_at
+            FROM 
+                product_category c
+            INNER JOIN 
+                product_table p ON p.product_category = c.id
+            WHERE 
+                p.supplier = ? AND p.is_deleted = 0
+            ORDER BY c.category_name;`;
 
         db.query(query, [supplierId], (err, result) => {
             if (err) {
                 console.error('Database error:', err);
-                return reject(new Error('Error fetching categories from the database'));
+                return reject(new Error('Error fetching categories and products'));
             }
 
-            if (!result || result.length === 0) {
-                return resolve([]); // Return an empty array if no categories found
-            }
+            const categoryMap = {};
 
-            resolve(result.map(row => row.category_name)); // Return only category names as an array
+            result.forEach(row => {
+                if (!categoryMap[row.category_id]) {
+                    categoryMap[row.category_id] = {
+                        category: row.category_name,
+                        products: []
+                    };
+                }
+
+                categoryMap[row.category_id].products.push({
+                    id: row.product_id,
+                    name: row.product_name,
+                    MRP: row.product_price, 
+                    quantiy:row.product_quantity,                   
+                    description: row.product_description,
+                    generic_name: row.generic_name,
+                    batch_no: row.product_batch_no,
+                    expiry_date: row.expiry_date,
+                    discount: row.product_discount,
+                    supplier_price: row.supplier_price,                    
+                    brand_name: row.brand_name,
+                    selling_price: row.selling_price,
+                    GST: row.GST,
+                    stock_status: row.stock_status,                   
+                    created_at: row.created_at
+                });
+            });
+
+            resolve(Object.values(categoryMap));
         });
     });
 }
@@ -546,6 +528,29 @@ static determineStockStatus(quantity) {
                 expiry_date,  // Date field, assumed to be valid
                 supplier_price, 
                 selling_price // Numeric field
+            ], (err, result) => {
+                if (err) reject(err);
+                else resolve(result);
+            });
+        });
+    }
+    
+
+    static findByAttributesWithoutBatch(product_name, expiry_date, supplier_price, selling_price) {
+        const query = `
+            SELECT * FROM product_table 
+            WHERE LOWER(product_name) = LOWER(?) 
+              AND DATE(expiry_date) = DATE(?) 
+              AND supplier_price = ?
+              AND selling_price = ?
+              AND is_deleted = 0
+        `;
+        return new Promise((resolve, reject) => {
+            db.query(query, [
+                product_name.trim(),
+                expiry_date,
+                supplier_price,
+                selling_price
             ], (err, result) => {
                 if (err) reject(err);
                 else resolve(result);

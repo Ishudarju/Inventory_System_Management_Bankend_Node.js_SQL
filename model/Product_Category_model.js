@@ -241,10 +241,36 @@ static async getProductsByCategory(id) {
 
 
 
+  // static async getAll() {
+  //   const rows = await queryAsync('SELECT * FROM product_category', []);
+  //   return rows;
+  // }
+
+
   static async getAll() {
+    // Check if "Non_Medical_Category" exists
+    const checkQuery = 'SELECT * FROM product_category WHERE category_name = ? LIMIT 1';
+    const existing = await queryAsync(checkQuery, ['other_items']);
+  
+    if (existing.length === 0) {
+      // If it doesn't exist, insert it and generate cat_auto_gen_id
+      const insertQuery = 'INSERT INTO product_category (category_name, description) VALUES (?, ?)';
+      const insertResult = await queryAsync(insertQuery, ['other_items', 'Default category for other_items']);
+      
+      const newId = insertResult.insertId;
+      const catAutoGenId = `CAT${newId}`;
+  
+      await queryAsync(
+        'UPDATE product_category SET cat_auto_gen_id = ? WHERE id = ?',
+        [catAutoGenId, newId]
+      );
+    }
+  
+    // Return all categories
     const rows = await queryAsync('SELECT * FROM product_category', []);
     return rows;
   }
+  
 
   static async getAll_page(page, limit) {
     const offset = (page - 1) * limit; // Calculate offset
@@ -323,6 +349,8 @@ static async getAllCategoryNames() {
     const rows = await queryAsync('SELECT * FROM product_category WHERE id = ?', [id]);
     return rows[0];
   }
+
+  
 
   // static async create(data) {
   //   const { category_name, description } = data;

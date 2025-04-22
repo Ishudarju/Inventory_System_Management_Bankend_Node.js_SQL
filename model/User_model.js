@@ -92,6 +92,11 @@ const User = {
     const query = 'SELECT * FROM users WHERE user_id_proof = ?';
     db.query(query, [user_id_proof], callback);
   },
+
+  findByContact: (contact_number, callback) => {
+    db.query('SELECT * FROM users WHERE contact_number = ?', [contact_number], callback);
+  },
+  
   
 
   findById: (id, callback) => {
@@ -109,10 +114,10 @@ const User = {
     db.query(query, [id], callback);
   },
 
-  setResetToken: (email, token, expiry, callback) => {
-    const query = 'UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE email = ?';
-    db.query(query, [token, expiry, email], callback);
-  },
+  // setResetToken: (email, token, expiry, callback) => {
+  //   const query = 'UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE email = ?';
+  //   db.query(query, [token, expiry, email], callback);
+  // },
 
   // updatePassword: (email, hashedPassword, callback) => {
   //   const query = 'UPDATE users SET password = ? WHERE email = ?';
@@ -120,7 +125,40 @@ const User = {
   // },
 
    // ✅ Update user details with password
-   update: (id, username, email, hashedPassword, role, contact_number, address_details, user_id_proof, callback) => {
+   
+   updateResetToken: (email, token, expiry, callback) => {
+    const query = 'UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE email = ?';
+    db.query(query, [token, expiry, email], callback);
+  }
+  ,
+
+  updatePassword: (email, hashedPassword, callback) => {
+    const query = 'UPDATE users SET encrypted_password = ? WHERE email = ?';
+    db.query(query, [hashedPassword, email], callback);
+    // console.log()
+  },
+  
+  updatePassword_id: (id, hashedPassword, callback) => {
+    const query = 'UPDATE users SET encrypted_password = ? WHERE id = ?';
+    db.query(query, [hashedPassword, id], callback);
+  }
+  
+  
+,  
+  
+  findByResetToken: (token, callback) => {
+    const query = 'SELECT * FROM users WHERE reset_token = ?';
+    db.query(query, [token], callback);
+  },
+  
+  clearResetToken: (email, callback) => {
+    const query = 'UPDATE users SET reset_token = NULL, reset_token_expiry = NULL WHERE email = ?';
+    db.query(query, [email], callback);
+  },
+
+
+
+  update: (id, username, email, hashedPassword, role, contact_number, address_details, user_id_proof, callback) => {
     const query = `UPDATE users 
                    SET username = ?, email = ?, encrypted_password = ?, role = ?, 
                        contact_number = ?, address_details = ?, user_id_proof = ? 
@@ -137,10 +175,7 @@ const User = {
     db.query(query, [username, email, role, contact_number, address_details, user_id_proof, id], callback);
   },
 
-  clearResetToken: (email, callback) => {
-    const query = 'UPDATE users SET reset_token = NULL, reset_token_expiry = NULL WHERE email = ?';
-    db.query(query, [email], callback);
-  }
+
 };
 
 module.exports = User;

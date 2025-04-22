@@ -35,6 +35,8 @@ router.delete('/user/:id',authMiddleware,adminOnly, StaffController.deleteUser);
 // Route to update a user's profile
 router.put('/user/:id', authMiddleware,adminOnly,StaffController.updateUser);
 
+router.put('/resetpassword_staff/:id',authMiddleware,adminOnly, StaffController.resetPassword_staff);
+
 
 module.exports = router;
 
